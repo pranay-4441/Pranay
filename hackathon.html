@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Security Toolkit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-active {
+            border-color: #4f46e5;
+            color: #4f46e5;
+            background-color: #eef2ff;
+        }
+        .tool-card {
+            min-height: 450px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-6 md:p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Digital Security Toolkit</h1>
+            <p class="text-gray-500 mt-2">Simple tools to help you stay safe online.</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex border-b border-gray-200 mb-6">
+            <button data-tab="password" class="tab-button tab-active flex-1 py-3 px-2 text-sm md:text-base font-medium text-gray-500 border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700 transition-all duration-300 focus:outline-none">Password Checker</button>
+            <button data-tab="link" class="tab-button flex-1 py-3 px-2 text-sm md:text-base font-medium text-gray-500 border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700 transition-all duration-300 focus:outline-none">Link Scanner</button>
+            <button data-tab="metadata" class="tab-button flex-1 py-3 px-2 text-sm md:text-base font-medium text-gray-500 border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700 transition-all duration-300 focus:outline-none">Metadata Scrubber</button>
+        </div>
+
+        <!-- Tool Content -->
+        <div>
+            <!-- Password Checker -->
+            <div id="password-tool" class="tab-content tool-card">
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">Check Password Strength & Breaches</h2>
+                <p class="text-gray-500 mb-4 text-sm">See if your password is strong and if it has appeared in a known data breach. Your password is never sent to any server.</p>
+                <div class="relative">
+                    <input type="password" id="password-input" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter your password">
+                    <button id="toggle-password" type="button" class="absolute inset-y-0 right-0 px-4 text-gray-500">
+                        <svg id="eye-open" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
+                        <svg id="eye-closed" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2 2 0 012.828 2.828l1.515 1.515A4 4 0 0014 10a4 4 0 10-5.732-2.443z" clip-rule="evenodd" /><path d="M10.707 15.293a1 1 0 01-1.414 0l-1.414-1.414a1 1 0 111.414-1.414l1.414 1.414a1 1 0 010 1.414zM4.458 10a9.953 9.953 0 001.325 3.971l1.515-1.515a4 4 0 015.424-5.424l1.515-1.515A9.953 9.953 0 0010 4.542 9.953 9.953 0 004.458 10z" /></svg>
+                    </button>
+                </div>
+                <button id="check-password-btn" class="w-full mt-4 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">Check Password</button>
+                <div id="password-result" class="mt-4"></div>
+            </div>
+
+            <!-- Link Scanner -->
+            <div id="link-tool" class="tab-content hidden tool-card">
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">Scan a Link for Threats</h2>
+                <p class="text-gray-500 mb-4 text-sm">Check a URL for potential phishing or malware threats before you click. This is a simulation and does not use a live threat database.</p>
+                <input type="text" id="link-input" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="https://example.com">
+                <button id="scan-link-btn" class="w-full mt-4 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">Scan Link</button>
+                <div id="link-result" class="mt-4"></div>
+            </div>
+
+            <!-- Metadata Scrubber -->
+            <div id="metadata-tool" class="tab-content hidden tool-card">
+                 <h2 class="text-xl font-semibold text-gray-700 mb-2">Scrub Metadata from Photos</h2>
+                 <p class="text-gray-500 mb-4 text-sm">Upload a photo to remove hidden data like GPS location and device info. Your photo is processed in your browser and never uploaded.</p>
+                 <label for="image-upload" class="w-full cursor-pointer bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-6 hover:bg-gray-200 transition-colors">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                     <span class="text-gray-600 font-medium">Click to upload an image</span>
+                     <span id="file-name" class="text-xs text-gray-500 mt-1"></span>
+                 </label>
+                 <input type="file" id="image-upload" class="hidden" accept="image/jpeg, image/png">
+                 <div id="metadata-result" class="mt-4 flex flex-col items-center"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- TABS LOGIC ---
+        const tabs = document.querySelectorAll('.tab-button');
+        const contents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.dataset.tab;
+
+                tabs.forEach(t => {
+                    t.classList.remove('tab-active');
+                });
+                tab.classList.add('tab-active');
+
+                contents.forEach(content => {
+                    if (content.id === `${target}-tool`) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            });
+        });
+
+        // --- PASSWORD CHECKER LOGIC ---
+        const passwordInput = document.getElementById('password-input');
+        const togglePasswordBtn = document.getElementById('toggle-password');
+        const checkPasswordBtn = document.getElementById('check-password-btn');
+        const passwordResult = document.getElementById('password-result');
+        const eyeOpen = document.getElementById('eye-open');
+        const eyeClosed = document.getElementById('eye-closed');
+
+        togglePasswordBtn.addEventListener('click', () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeOpen.classList.add('hidden');
+                eyeClosed.classList.remove('hidden');
+            } else {
+                passwordInput.type = 'password';
+                eyeOpen.classList.remove('hidden');
+                eyeClosed.classList.add('hidden');
+            }
+        });
+
+        checkPasswordBtn.addEventListener('click', async () => {
+            const password = passwordInput.value;
+            passwordResult.innerHTML = '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div><span class="ml-2">Checking...</span></div>';
+
+            if (!password) {
+                passwordResult.innerHTML = `<div class="p-4 rounded-lg bg-yellow-100 text-yellow-800 border border-yellow-200">Please enter a password.</div>`;
+                return;
+            }
+
+            const strength = checkPasswordStrength(password);
+            const pwnedCount = await checkPwned(password);
+
+            let resultHTML = '<div class="space-y-3">';
+            resultHTML += strength.html;
+            
+            if (pwnedCount === null) {
+                resultHTML += `<div class="p-3 rounded-md bg-gray-100 text-gray-700 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m-2.828-2.828a5 5 0 010-7.072m-2.829 2.829a1 1 0 010-1.414m-2.828 2.828a1 1 0 01-1.414 0m2.828-2.828a5 5 0 00-7.072 0m2.828 2.828a9 9 0 0012.728 0" /></svg>Could not check for breaches. Try again later.</div>`;
+            } else if (pwnedCount > 0) {
+                resultHTML += `<div class="p-3 rounded-md bg-red-100 text-red-800 border border-red-200 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg><strong>Oh no!</strong> This password has been found in <strong>${pwnedCount.toLocaleString()}</strong> data breaches.</div>`;
+            } else {
+                resultHTML += `<div class="p-3 rounded-md bg-green-100 text-green-800 border border-green-200 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg><strong>Good news!</strong> This password was not found in any known breaches.</div>`;
+            }
+
+            resultHTML += '</div>';
+            passwordResult.innerHTML = resultHTML;
+        });
+
+        function checkPasswordStrength(password) {
+            let score = 0;
+            if (password.length >= 8) score++;
+            if (password.length >= 12) score++;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+            if (/\d/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+
+            let message = '';
+            let colorClass = '';
+
+            switch (score) {
+                case 0:
+                case 1:
+                case 2:
+                    message = 'Very Weak';
+                    colorClass = 'bg-red-100 text-red-800 border border-red-200';
+                    break;
+                case 3:
+                    message = 'Weak';
+                    colorClass = 'bg-amber-100 text-amber-800 border border-amber-200';
+                    break;
+                case 4:
+                    message = 'Good';
+                    colorClass = 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+                    break;
+                case 5:
+                    message = 'Strong';
+                    colorClass = 'bg-green-100 text-green-800 border border-green-200';
+                    break;
+            }
+            return {
+                html: `<div class="p-3 rounded-md ${colorClass}"><strong>Strength:</strong> ${message}</div>`
+            };
+        }
+        
+        // Function to check password against Have I Been Pwned API
+        async function checkPwned(password) {
+            try {
+                // 1. Hash the password using SHA-1 (as required by the API)
+                const msgBuffer = new TextEncoder().encode(password);
+                const hashBuffer = await crypto.subtle.digest('SHA-1', msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                
+                // 2. Split hash for API query (k-Anonymity model)
+                const prefix = hashHex.substring(0, 5);
+                const suffix = hashHex.substring(5).toUpperCase();
+                
+                // 3. Query the Pwned Passwords API
+                const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
+                if (!response.ok) {
+                    throw new Error(`API request failed with status: ${response.status}`);
+                }
+                const data = await response.text();
+                
+                // 4. Check if our hash suffix is in the response
+                const hashes = data.split('\r\n');
+                for (const line of hashes) {
+                    const [hashSuffix, count] = line.split(':');
+                    if (hashSuffix === suffix) {
+                        return parseInt(count);
+                    }
+                }
+                return 0; // Not found
+            } catch (error) {
+                console.error("Error checking pwned passwords:", error);
+                return null; // Indicate an error occurred
+            }
+        }
+
+        // --- LINK SCANNER LOGIC ---
+        const linkInput = document.getElementById('link-input');
+        const scanLinkBtn = document.getElementById('scan-link-btn');
+        const linkResult = document.getElementById('link-result');
+
+        scanLinkBtn.addEventListener('click', () => {
+            const url = linkInput.value.trim();
+            if (!url) {
+                linkResult.innerHTML = `<div class="p-4 rounded-lg bg-yellow-100 text-yellow-800 border border-yellow-200">Please enter a URL to scan.</div>`;
+                return;
+            }
+
+            // Basic validation to ensure it's a plausible URL structure
+            let validUrl = true;
+            try {
+                new URL(url);
+            } catch (_) {
+                validUrl = false;
+            }
+
+            if (!validUrl) {
+                linkResult.innerHTML = `<div class="p-4 rounded-lg bg-red-100 text-red-800 border border-red-200">Invalid URL. Please enter a full URL (e.g., https://example.com).</div>`;
+                return;
+            }
+
+            // --- SIMULATION of a link scan ---
+            // A real implementation would call a backend service with an API key for a service like Google Safe Browsing.
+            linkResult.innerHTML = '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div><span class="ml-2">Scanning...</span></div>';
+            
+            setTimeout(() => {
+                let resultHTML = '';
+                // Simple checks for suspicious patterns
+                if (url.includes('.xyz') || url.includes('.info') || url.includes('.top') || url.match(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/)) {
+                     resultHTML = `<div class="p-4 rounded-lg bg-amber-100 text-amber-800 border border-amber-200">
+                        <h4 class="font-bold">Potentially Unsafe</h4>
+                        <p class="text-sm">This link has characteristics that are sometimes associated with malicious websites. Proceed with caution.</p>
+                    </div>`;
+                } else if (!url.startsWith('https://')) {
+                    resultHTML = `<div class="p-4 rounded-lg bg-yellow-100 text-yellow-800 border border-yellow-200">
+                        <h4 class="font-bold">Caution: Not Secure</h4>
+                        <p class="text-sm">This link does not use a secure (HTTPS) connection. Information sent to this site could be intercepted.</p>
+                    </div>`;
+                } else {
+                    resultHTML = `<div class="p-4 rounded-lg bg-green-100 text-green-800 border border-green-200">
+                        <h4 class="font-bold">Looks Safe</h4>
+                        <p class="text-sm">Our basic scan did not find any immediate signs of danger. Always be cautious when visiting new websites.</p>
+                    </div>`;
+                }
+                linkResult.innerHTML = resultHTML;
+            }, 1000);
+        });
+
+        // --- METADATA SCRUBBER LOGIC ---
+        const imageUpload = document.getElementById('image-upload');
+        const metadataResult = document.getElementById('metadata-result');
+        const fileNameSpan = document.getElementById('file-name');
+
+        imageUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                fileNameSpan.textContent = '';
+                metadataResult.innerHTML = '';
+                return;
+            }
+            
+            fileNameSpan.textContent = file.name;
+            metadataResult.innerHTML = '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div><span class="ml-2">Processing image...</span></div>';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+
+                    // By drawing the image to a canvas and converting to a Blob,
+                    // we create a reliable download link that works in more environments.
+                    canvas.toBlob((blob) => {
+                        const objectUrl = URL.createObjectURL(blob);
+                        
+                        metadataResult.innerHTML = `
+                            <h3 class="font-semibold text-lg text-gray-700 mb-2">Metadata Removed!</h3>
+                            <p class="text-sm text-gray-500 mb-4">A cleaned version of your image is ready.</p>
+                            <img src="${objectUrl}" alt="Cleaned Image Preview" class="max-w-full h-auto max-h-64 rounded-lg shadow-md mb-4">
+                            <a href="${objectUrl}" download="cleaned_${file.name}" class="w-full text-center bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">
+                                Download Cleaned Image
+                            </a>
+                        `;
+                    }, file.type);
+                };
+                img.onerror = function() {
+                    metadataResult.innerHTML = `<div class="p-4 rounded-lg bg-red-100 text-red-800 border border-red-200">Could not process the selected file. Please try a different image.</div>`;
+                }
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+
+            // Reset the input value to allow re-uploading the same file
+            event.target.value = null;
+        });
+    </script>
+</body>
+</html>
+
