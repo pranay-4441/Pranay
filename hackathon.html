@@ -1,327 +1,626 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en" class=""> <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digital Security Toolkit</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            /* Light Theme Colors */
+            --bg-primary: #f1f5f9; /* slate-100 */
+            --bg-secondary: #ffffff; /* white */
+            --text-primary: #1e293b; /* slate-800 */
+            --text-secondary: #64748b; /* slate-500 */
+            --border-color: #e2e8f0; /* slate-200 */
+            --accent-color: #6366f1; /* indigo-500 */
+            --accent-hover: #4f46e5; /* indigo-600 */
+            --green-bg: #f0fdf4; --green-text: #166534; --green-border: #bbf7d0;
+            --red-bg: #fef2f2; --red-text: #991b1b; --red-border: #fecaca;
+            --amber-bg: #fffbeb; --amber-text: #92400e; --amber-border: #fde68a;
+        }
+
+        html.dark {
+            /* Dark Theme Colors */
+            --bg-primary: #0f172a; /* slate-900 */
+            --bg-secondary: #1e293b; /* slate-800 */
+            --text-primary: #e2e8f0; /* slate-200 */
+            --text-secondary: #94a3b8; /* slate-400 */
+            --border-color: #334155; /* slate-700 */
+            --green-bg: #14532d; --green-text: #bbf7d0; --green-border: #22c55e;
+            --red-bg: #7f1d1d; --red-text: #fecaca; --red-border: #ef4444;
+            --amber-bg: #78350f; --amber-text: #fde68a; --amber-border: #f59e0b;
+        }
+        
         body {
             font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .main-container {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .tab-button {
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+        .tab-button:hover {
+            background-color: var(--bg-primary);
+            color: var(--accent-color);
         }
         .tab-active {
-            border-color: #4f46e5;
-            color: #4f46e5;
-            background-color: #eef2ff;
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+            background-color: color-mix(in srgb, var(--accent-color) 10%, transparent);
         }
-        .tool-card {
-            min-height: 450px;
-        }
+        
+        .option-btn { transition: background-color 0.2s, border-color 0.2s; }
+        .option-btn.correct { background-color: var(--green-bg); border-color: var(--green-border); color: var(--green-text); }
+        .option-btn.incorrect { background-color: var(--red-bg); border-color: var(--red-border); color: var(--red-text); }
+
+        .precaution-steps { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out, padding-top 0.4s ease-in-out; }
+        .precaution-item.active .precaution-steps { max-height: 500px; padding-top: 0.75rem; }
+        .precaution-icon { transition: transform 0.3s ease; }
+        .precaution-item.active .precaution-icon { transform: rotate(135deg); }
+
+        input, select, textarea { background-color: var(--bg-primary); border-color: var(--border-color); color: var(--text-primary); }
+        input:focus, select, textarea:focus { --tw-ring-color: var(--accent-color); }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+<body class="min-h-screen p-4 flex items-center justify-center">
 
-    <div class="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-6 md:p-8">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">Digital Security Toolkit</h1>
-            <p class="text-gray-500 mt-2">Simple tools to help you stay safe online.</p>
+    <div class="main-container w-full max-w-3xl rounded-2xl shadow-2xl p-6 md:p-8">
+        <header class="flex justify-between items-start mb-8">
+            <div class="text-left">
+                <h1 class="text-3xl font-bold" data-lang-key="title">Digital Security Toolkit</h1>
+                <p style="color: var(--text-secondary);" class="mt-1" data-lang-key="subtitle">Simple tools to help you stay safe online.</p>
+            </div>
+            <div class="flex items-center space-x-2 flex-shrink-0">
+                <button id="language-toggle" class="p-2 w-16 text-center text-sm font-semibold rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--bg-secondary)] focus:ring-[var(--accent-color)] text-[var(--text-secondary)] hover:text-[var(--accent-color)] hover:bg-[var(--bg-primary)] transition-all duration-300">
+                    <span data-lang-key="langToggle">EN / HI</span>
+                </button>
+                <button id="theme-toggle" class="p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--bg-secondary)] focus:ring-[var(--accent-color)] text-[var(--text-secondary)] hover:text-[var(--accent-color)] hover:bg-[var(--bg-primary)] transition-all duration-300">
+                    <svg id="theme-icon-light" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    <svg id="theme-icon-dark" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex border-b" style="border-color: var(--border-color);">
+            <button data-tab="metadata" class="tab-button tab-active flex-1 py-3 px-2 text-sm md:text-base font-medium transition-all duration-300 focus:outline-none" data-lang-key="tabMetadata">Metadata Remover</button>
+            <button data-tab="password" class="tab-button flex-1 py-3 px-2 text-sm md:text-base font-medium transition-all duration-300 focus:outline-none" data-lang-key="tabPassword">Password Checker</button>
+            <button data-tab="link" class="tab-button flex-1 py-3 px-2 text-sm md:text-base font-medium transition-all duration-300 focus:outline-none" data-lang-key="tabLink">Link Scanner</button>
+            <button data-tab="awareness" class="tab-button flex-1 py-3 px-2 text-sm md:text-base font-medium transition-all duration-300 focus:outline-none" data-lang-key="tabAwareness">Threat Awareness</button>
         </div>
 
-        <!-- Tabs -->
-        <div class="flex border-b border-gray-200 mb-6">
-            <button data-tab="password" class="tab-button tab-active flex-1 py-3 px-2 text-sm md:text-base font-medium text-gray-500 border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700 transition-all duration-300 focus:outline-none">Password Checker</button>
-            <button data-tab="link" class="tab-button flex-1 py-3 px-2 text-sm md:text-base font-medium text-gray-500 border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700 transition-all duration-300 focus:outline-none">Link Scanner</button>
-            <button data-tab="metadata" class="tab-button flex-1 py-3 px-2 text-sm md:text-base font-medium text-gray-500 border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700 transition-all duration-300 focus:outline-none">Metadata Scrubber</button>
-        </div>
+        <div class="min-h-[450px] pt-6">
+            <div id="metadata-tool" class="tab-content">
+                <h2 class="text-xl font-semibold text-[var(--text-primary)] mb-2" data-lang-key="metadataTitle">Remove Image Metadata</h2>
+                <p class="text-[var(--text-secondary)] mb-4 text-sm" data-lang-key="metadataDesc">Upload a photo to view its hidden data and download a clean, metadata-free version. Your photo is processed in your browser and is never uploaded.</p>
+                <label for="image-upload" class="w-full cursor-pointer bg-[var(--bg-primary)] border-2 border-dashed border-[var(--border-color)] rounded-lg flex flex-col items-center justify-center p-6 hover:bg-opacity-70 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-[var(--text-secondary)] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    <span class="font-medium text-[var(--text-primary)]" data-lang-key="metadataUpload">Click to upload an image</span>
+                    <span id="file-name" class="text-xs text-[var(--text-secondary)] mt-1"></span>
+                </label>
+                <input type="file" id="image-upload" class="hidden" accept="image/jpeg, image/png">
+                <div id="metadata-result" class="mt-4"></div>
+            </div>
 
-        <!-- Tool Content -->
-        <div>
-            <!-- Password Checker -->
-            <div id="password-tool" class="tab-content tool-card">
-                <h2 class="text-xl font-semibold text-gray-700 mb-2">Check Password Strength & Breaches</h2>
-                <p class="text-gray-500 mb-4 text-sm">See if your password is strong and if it has appeared in a known data breach. Your password is never sent to any server.</p>
-                <div class="relative">
-                    <input type="password" id="password-input" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter your password">
-                    <button id="toggle-password" type="button" class="absolute inset-y-0 right-0 px-4 text-gray-500">
-                        <svg id="eye-open" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
-                        <svg id="eye-closed" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2 2 0 012.828 2.828l1.515 1.515A4 4 0 0014 10a4 4 0 10-5.732-2.443z" clip-rule="evenodd" /><path d="M10.707 15.293a1 1 0 01-1.414 0l-1.414-1.414a1 1 0 111.414-1.414l1.414 1.414a1 1 0 010 1.414zM4.458 10a9.953 9.953 0 001.325 3.971l1.515-1.515a4 4 0 015.424-5.424l1.515-1.515A9.953 9.953 0 0010 4.542 9.953 9.953 0 004.458 10z" /></svg>
-                    </button>
+            <div id="password-tool" class="tab-content hidden">
+                 <h2 class="text-xl font-semibold mb-2" data-lang-key="passwordTitle">Check Password Strength & Breaches</h2>
+                 <p style="color: var(--text-secondary);" class="mb-4 text-sm" data-lang-key="passwordDesc">See if your password is strong and if it has appeared in a known data breach. Your password is never sent to any server.</p>
+                 <div class="relative">
+                     <input type="password" id="password-input" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent" placeholder="Enter your password">
+                     <button id="toggle-password" type="button" class="absolute inset-y-0 right-0 px-4 text-[var(--text-secondary)]">
+                         <svg id="eye-open" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
+                         <svg id="eye-closed" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2 2 0 012.828 2.828l1.515 1.515A4 4 0 0014 10a4 4 0 10-5.732-2.443z" clip-rule="evenodd" /><path d="M10.707 15.293a1 1 0 01-1.414 0l-1.414-1.414a1 1 0 111.414-1.414l1.414 1.414a1 1 0 010 1.414zM4.458 10a9.953 9.953 0 001.325 3.971l1.515-1.515a4 4 0 015.424-5.424l1.515-1.515A9.953 9.953 0 0010 4.542 9.953 9.953 0 004.458 10z" /></svg>
+                     </button>
+                 </div>
+                 <button id="check-password-btn" class="w-full mt-4 bg-[var(--accent-color)] text-white py-3 rounded-lg font-semibold hover:bg-[var(--accent-hover)] transition-colors" data-lang-key="passwordBtn">Check Password</button>
+                 <div id="password-result" class="mt-4"></div>
+            </div>
+
+            <div id="link-tool" class="tab-content hidden">
+                 <h2 class="text-xl font-semibold mb-2" data-lang-key="linkTitle">Scan a Link for Threats</h2>
+                 <p style="color: var(--text-secondary);" class="mb-4 text-sm" data-lang-key="linkDesc">Check a URL for potential phishing or malware threats before you click. This is a simulation and does not use a live threat database.</p>
+                 <input type="text" id="link-input" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent" placeholder="https://example.com">
+                 <button id="scan-link-btn" class="w-full mt-4 bg-[var(--accent-color)] text-white py-3 rounded-lg font-semibold hover:bg-[var(--accent-hover)] transition-colors" data-lang-key="linkBtn">Scan Link</button>
+                 <div id="link-result" class="mt-4"></div>
+            </div>
+            
+            <div id="awareness-tool" class="tab-content hidden space-y-8">
+                <div>
+                    <h2 class="text-xl font-semibold mb-2" data-lang-key="awarenessGameTitle">Scam Awareness Game & Alerts</h2>
+                    <p style="color: var(--text-secondary);" class="mb-4 text-sm" data-lang-key="awarenessGameDesc">Test your knowledge with real-world scenarios and stay updated on the latest threats.</p>
+                    <div id="game-and-alert-content">
+                        <div id="scam-alert-container" class="relative mb-4 p-4 rounded-lg" style="background-color: var(--amber-bg); border: 1px solid var(--amber-border);">
+                            <button id="refresh-alert-btn" title="Get new alert" class="absolute top-2 right-2 p-1 text-[var(--amber-text)] hover:bg-black/10 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--amber-bg)] focus:ring-amber-500 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4 4l1.5 1.5A9 9 0 0119.5 19.5M20 20l-1.5-1.5A9 9 0 004.5 4.5" /></svg>
+                            </button>
+                            <div class="flex items-start">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-500 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                <div id="scam-alert-content" class="pr-6">
+                                    <h3 id="scam-alert-title" class="font-bold" style="color: var(--amber-text);" data-lang-key="loadingAlert">Loading latest alert...</h3>
+                                    <p id="scam-alert-description" class="text-sm mt-1" style="color: var(--amber-text);"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="game-area" class="mt-6">
+                            <div id="game-start-screen">
+                                <button id="start-game-btn" class="w-full bg-[var(--accent-color)] text-white py-3 rounded-lg font-semibold hover:bg-[var(--accent-hover)] transition-colors" data-lang-key="startGameBtn">Start Awareness Game</button>
+                            </div>
+                            <div id="game-question-screen" class="hidden">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-semibold" data-lang-key="scenarioTitle">Scenario</h3>
+                                    <p id="game-score" class="text-sm font-medium text-[var(--accent-color)] bg-opacity-10 bg-[var(--accent-color)] px-3 py-1 rounded-full"><span data-lang-key="scorePrefix">Score</span>: 0</p>
+                                </div>
+                                <p id="game-scenario" class="bg-[var(--bg-primary)] p-4 rounded-lg border border-[var(--border-color)] mb-4 min-h-[100px]"></p>
+                                <div id="game-options" class="space-y-3"></div>
+                                <div id="game-feedback" class="mt-4"></div>
+                                <button id="game-next-btn" class="w-full mt-4 bg-[var(--accent-color)] text-white py-3 rounded-lg font-semibold hover:bg-[var(--accent-hover)] transition-colors hidden" data-lang-key="nextQuestionBtn">Next Question</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button id="check-password-btn" class="w-full mt-4 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">Check Password</button>
-                <div id="password-result" class="mt-4"></div>
-            </div>
+                
+                <div class="border-t my-8" style="border-color: var(--border-color);"></div>
 
-            <!-- Link Scanner -->
-            <div id="link-tool" class="tab-content hidden tool-card">
-                <h2 class="text-xl font-semibold text-gray-700 mb-2">Scan a Link for Threats</h2>
-                <p class="text-gray-500 mb-4 text-sm">Check a URL for potential phishing or malware threats before you click. This is a simulation and does not use a live threat database.</p>
-                <input type="text" id="link-input" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="https://example.com">
-                <button id="scan-link-btn" class="w-full mt-4 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">Scan Link</button>
-                <div id="link-result" class="mt-4"></div>
-            </div>
-
-            <!-- Metadata Scrubber -->
-            <div id="metadata-tool" class="tab-content hidden tool-card">
-                 <h2 class="text-xl font-semibold text-gray-700 mb-2">Scrub Metadata from Photos</h2>
-                 <p class="text-gray-500 mb-4 text-sm">Upload a photo to remove hidden data like GPS location and device info. Your photo is processed in your browser and never uploaded.</p>
-                 <label for="image-upload" class="w-full cursor-pointer bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-6 hover:bg-gray-200 transition-colors">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                     <span class="text-gray-600 font-medium">Click to upload an image</span>
-                     <span id="file-name" class="text-xs text-gray-500 mt-1"></span>
-                 </label>
-                 <input type="file" id="image-upload" class="hidden" accept="image/jpeg, image/png">
-                 <div id="metadata-result" class="mt-4 flex flex-col items-center"></div>
+                <div>
+                    <h2 class="text-xl font-semibold mb-2" data-lang-key="precautionsTitle">Essential Security Checklist</h2>
+                    <p style="color: var(--text-secondary);" class="mb-4 text-sm" data-lang-key="precautionsDesc">Click on any precaution to see the detailed steps.</p>
+                    <div id="precautions-list" class="space-y-2 border rounded-lg p-2" style="border-color: var(--border-color);">
+                        </div>
+                </div>
             </div>
         </div>
+        
+        <footer class="text-center mt-8 pt-6 border-t" style="border-color: var(--border-color);">
+            <p class="text-sm" style="color: var(--text-secondary);" data-lang-key="footer">© 2025 Digital Security Toolkit. Stay safe!</p>
+        </footer>
     </div>
 
     <script>
-        // --- TABS LOGIC ---
-        const tabs = document.querySelectorAll('.tab-button');
-        const contents = document.querySelectorAll('.tab-content');
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- TRANSLATIONS OBJECT ---
+            const translations = {
+                en: {
+                    title: "Digital Security Toolkit",
+                    subtitle: "Simple tools to help you stay safe online.",
+                    langToggle: "EN / HI",
+                    tabMetadata: "Metadata Remover",
+                    tabPassword: "Password Checker",
+                    tabLink: "Link Scanner",
+                    tabAwareness: "Threat Awareness",
+                    metadataTitle: "Remove Image Metadata",
+                    metadataDesc: "Upload a photo to view its hidden data and download a clean, metadata-free version. Your photo is processed in your browser and is never uploaded.",
+                    metadataUpload: "Click to upload an image",
+                    metadataFound: "Metadata Found (will be removed)",
+                    downloadCleaned: "Download Cleaned Image",
+                    noExif: "No EXIF data found in this image.",
+                    passwordTitle: "Check Password Strength & Breaches",
+                    passwordDesc: "See if your password is strong and if it has appeared in a known data breach. Your password is never sent to any server.",
+                    passwordBtn: "Check Password",
+                    linkTitle: "Scan a Link for Threats",
+                    linkDesc: "Check a URL for potential phishing or malware threats before you click. This is a simulation and does not use a live threat database.",
+                    linkBtn: "Scan Link",
+                    awarenessGameTitle: "Scam Awareness Game & Alerts",
+                    awarenessGameDesc: "Test your knowledge with real-world scenarios and stay updated on the latest threats.",
+                    loadingAlert: "Loading latest alert...",
+                    startGameBtn: "Start Awareness Game",
+                    scenarioTitle: "Scenario",
+                    scorePrefix: "Score",
+                    nextQuestionBtn: "Next Question",
+                    playAgainBtn: "Play Again",
+                    precautionsTitle: "Essential Security Checklist",
+                    precautionsDesc: "Click on any precaution to see the detailed steps.",
+                    footer: "© 2025 Digital Security Toolkit. Stay safe!",
+                },
+                hi: {
+                    title: "डिजिटल सुरक्षा टूलकिट",
+                    subtitle: "ऑनलाइन सुरक्षित रहने में आपकी मदद करने वाले सरल उपकरण।",
+                    langToggle: "EN / HI",
+                    tabMetadata: "मेटाडेटा रिमूवर",
+                    tabPassword: "पासवर्ड परीक्षक",
+                    tabLink: "लिंक स्कैनर",
+                    tabAwareness: "खतरे की जागरूकता",
+                    metadataTitle: "छवि मेटाडेटा हटाएं",
+                    metadataDesc: "छिपे हुए डेटा को देखने और एक स्वच्छ, मेटाडेटा-मुक्त संस्करण डाउनलोड करने के लिए एक फोटो अपलोड करें। आपकी तस्वीर आपके ब्राउज़र में संसाधित होती है और कभी अपलोड नहीं होती है।",
+                    metadataUpload: "एक छवि अपलोड करने के लिए क्लिक करें",
+                    metadataFound: "मेटाडेटा मिला (हटा दिया जाएगा)",
+                    downloadCleaned: "साफ की गई छवि डाउनलोड करें",
+                    noExif: "इस छवि में कोई EXIF ​​डेटा नहीं मिला।",
+                    passwordTitle: "पासवर्ड की ताकत और उल्लंघन की जाँच करें",
+                    passwordDesc: "देखें कि आपका पासवर्ड मजबूत है या नहीं और क्या यह किसी ज्ञात डेटा उल्लंघन में दिखाई दिया है। आपका पासवर्ड कभी भी किसी सर्वर पर नहीं भेजा जाता है।",
+                    passwordBtn: "पासवर्ड जांचें",
+                    linkTitle: "खतरों के लिए लिंक स्कैन करें",
+                    linkDesc: "क्लिक करने से पहले किसी भी संभावित फ़िशिंग या मैलवेयर खतरों के लिए URL की जाँच करें। यह एक सिमुलेशन है और लाइव थ्रेट डेटाबेस का उपयोग नहीं करता है।",
+                    linkBtn: "लिंक स्कैन करें",
+                    awarenessGameTitle: "घोटाला जागरूकता खेल और अलर्ट",
+                    awarenessGameDesc: "वास्तविक दुनिया के परिदृश्यों के साथ अपने ज्ञान का परीक्षण करें और नवीनतम खतरों पर अपडेट रहें।",
+                    loadingAlert: "नवीनतम अलर्ट लोड हो रहा है...",
+                    startGameBtn: "जागरूकता खेल शुरू करें",
+                    scenarioTitle: "परिदृश्य",
+                    scorePrefix: "स्कोर",
+                    nextQuestionBtn: "अगला प्रश्न",
+                    playAgainBtn: "फिर से खेलें",
+                    precautionsTitle: "आवश्यक सुरक्षा चेकलिस्ट",
+                    precautionsDesc: "विस्तृत चरण देखने के लिए किसी भी सावधानी पर क्लिक करें।",
+                    footer: "© 2025 डिजिटल सुरक्षा टूलकिट। सुरक्षित रहें!",
+                }
+            };
 
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const target = tab.dataset.tab;
+            // --- LANGUAGE TOGGLE LOGIC ---
+            const languageToggleBtn = document.getElementById('language-toggle');
+            let currentLanguage = localStorage.getItem('language') || 'en';
 
-                tabs.forEach(t => {
-                    t.classList.remove('tab-active');
-                });
-                tab.classList.add('tab-active');
-
-                contents.forEach(content => {
-                    if (content.id === `${target}-tool`) {
-                        content.classList.remove('hidden');
-                    } else {
-                        content.classList.add('hidden');
+            const setLanguage = (lang) => {
+                currentLanguage = lang;
+                localStorage.setItem('language', lang);
+                document.documentElement.lang = lang;
+                document.querySelectorAll('[data-lang-key]').forEach(el => {
+                    const key = el.dataset.langKey;
+                    if (translations[lang] && translations[lang][key]) {
+                        el.innerText = translations[lang][key];
                     }
+                });
+                renderPrecautionsList(); 
+                loadLatestScamAlert();
+            };
+            
+            languageToggleBtn.addEventListener('click', () => {
+                setLanguage(currentLanguage === 'en' ? 'hi' : 'en');
+            });
+
+            // --- THEME TOGGLE LOGIC ---
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const lightIcon = document.getElementById('theme-icon-light');
+            const darkIcon = document.getElementById('theme-icon-dark');
+            const htmlEl = document.documentElement;
+
+            const applyTheme = (theme) => {
+                htmlEl.classList.toggle('dark', theme === 'dark');
+                lightIcon.classList.toggle('hidden', theme === 'dark');
+                darkIcon.classList.toggle('hidden', theme !== 'dark');
+            };
+            
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            applyTheme(savedTheme || (systemPrefersDark ? 'dark' : 'light'));
+
+            themeToggleBtn.addEventListener('click', () => {
+                const newTheme = htmlEl.classList.contains('dark') ? 'light' : 'dark';
+                applyTheme(newTheme);
+                localStorage.setItem('theme', newTheme);
+            });
+
+            // --- TABS LOGIC ---
+            const tabs = document.querySelectorAll('.tab-button');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const target = tab.dataset.tab;
+                    tabs.forEach(t => t.classList.remove('tab-active'));
+                    tab.classList.add('tab-active');
+                    contents.forEach(content => {
+                        content.classList.toggle('hidden', content.id !== `${target}-tool`);
+                    });
                 });
             });
-        });
 
-        // --- PASSWORD CHECKER LOGIC ---
-        const passwordInput = document.getElementById('password-input');
-        const togglePasswordBtn = document.getElementById('toggle-password');
-        const checkPasswordBtn = document.getElementById('check-password-btn');
-        const passwordResult = document.getElementById('password-result');
-        const eyeOpen = document.getElementById('eye-open');
-        const eyeClosed = document.getElementById('eye-closed');
 
-        togglePasswordBtn.addEventListener('click', () => {
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                eyeOpen.classList.add('hidden');
-                eyeClosed.classList.remove('hidden');
-            } else {
-                passwordInput.type = 'password';
-                eyeOpen.classList.remove('hidden');
-                eyeClosed.classList.add('hidden');
-            }
-        });
-
-        checkPasswordBtn.addEventListener('click', async () => {
-            const password = passwordInput.value;
-            passwordResult.innerHTML = '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div><span class="ml-2">Checking...</span></div>';
-
-            if (!password) {
-                passwordResult.innerHTML = `<div class="p-4 rounded-lg bg-yellow-100 text-yellow-800 border border-yellow-200">Please enter a password.</div>`;
-                return;
-            }
-
-            const strength = checkPasswordStrength(password);
-            const pwnedCount = await checkPwned(password);
-
-            let resultHTML = '<div class="space-y-3">';
-            resultHTML += strength.html;
-            
-            if (pwnedCount === null) {
-                resultHTML += `<div class="p-3 rounded-md bg-gray-100 text-gray-700 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m-2.828-2.828a5 5 0 010-7.072m-2.829 2.829a1 1 0 010-1.414m-2.828 2.828a1 1 0 01-1.414 0m2.828-2.828a5 5 0 00-7.072 0m2.828 2.828a9 9 0 0012.728 0" /></svg>Could not check for breaches. Try again later.</div>`;
-            } else if (pwnedCount > 0) {
-                resultHTML += `<div class="p-3 rounded-md bg-red-100 text-red-800 border border-red-200 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg><strong>Oh no!</strong> This password has been found in <strong>${pwnedCount.toLocaleString()}</strong> data breaches.</div>`;
-            } else {
-                resultHTML += `<div class="p-3 rounded-md bg-green-100 text-green-800 border border-green-200 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg><strong>Good news!</strong> This password was not found in any known breaches.</div>`;
-            }
-
-            resultHTML += '</div>';
-            passwordResult.innerHTML = resultHTML;
-        });
-
-        function checkPasswordStrength(password) {
-            let score = 0;
-            if (password.length >= 8) score++;
-            if (password.length >= 12) score++;
-            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
-            if (/\d/.test(password)) score++;
-            if (/[^A-Za-z0-9]/.test(password)) score++;
-
-            let message = '';
-            let colorClass = '';
-
-            switch (score) {
-                case 0:
-                case 1:
-                case 2:
-                    message = 'Very Weak';
-                    colorClass = 'bg-red-100 text-red-800 border border-red-200';
-                    break;
-                case 3:
-                    message = 'Weak';
-                    colorClass = 'bg-amber-100 text-amber-800 border border-amber-200';
-                    break;
-                case 4:
-                    message = 'Good';
-                    colorClass = 'bg-yellow-100 text-yellow-800 border border-yellow-200';
-                    break;
-                case 5:
-                    message = 'Strong';
-                    colorClass = 'bg-green-100 text-green-800 border border-green-200';
-                    break;
-            }
-            return {
-                html: `<div class="p-3 rounded-md ${colorClass}"><strong>Strength:</strong> ${message}</div>`
-            };
-        }
-        
-        // Function to check password against Have I Been Pwned API
-        async function checkPwned(password) {
-            try {
-                // 1. Hash the password using SHA-1 (as required by the API)
-                const msgBuffer = new TextEncoder().encode(password);
-                const hashBuffer = await crypto.subtle.digest('SHA-1', msgBuffer);
-                const hashArray = Array.from(new Uint8Array(hashBuffer));
-                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-                
-                // 2. Split hash for API query (k-Anonymity model)
-                const prefix = hashHex.substring(0, 5);
-                const suffix = hashHex.substring(5).toUpperCase();
-                
-                // 3. Query the Pwned Passwords API
-                const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
-                if (!response.ok) {
-                    throw new Error(`API request failed with status: ${response.status}`);
+            // --- METADATA REMOVER LOGIC ---
+            const imageUpload = document.getElementById('image-upload');
+            const metadataResult = document.getElementById('metadata-result');
+            const fileNameSpan = document.getElementById('file-name');
+            imageUpload.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) {
+                    fileNameSpan.textContent = '';
+                    metadataResult.innerHTML = '';
+                    return;
                 }
-                const data = await response.text();
+                fileNameSpan.textContent = file.name;
+                metadataResult.innerHTML = `<div class="flex items-center justify-center text-[var(--text-secondary)]"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--accent-color)]"></div><span class="ml-2">Processing...</span></div>`;
                 
-                // 4. Check if our hash suffix is in the response
-                const hashes = data.split('\r\n');
-                for (const line of hashes) {
-                    const [hashSuffix, count] = line.split(':');
-                    if (hashSuffix === suffix) {
-                        return parseInt(count);
-                    }
-                }
-                return 0; // Not found
-            } catch (error) {
-                console.error("Error checking pwned passwords:", error);
-                return null; // Indicate an error occurred
-            }
-        }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        canvas.getContext('2d').drawImage(img, 0, 0);
+                        canvas.toBlob((blob) => {
+                            const cleanedUrl = URL.createObjectURL(blob);
+                            
+                            EXIF.getData(file, function() {
+                                const allTags = EXIF.getAllTags(this);
+                                let exifTable = `<div class="p-3 rounded-lg text-center" style="background-color:var(--amber-bg); color:var(--amber-text); border:1px solid var(--amber-border);"><span data-lang-key="noExif">${translations[currentLanguage].noExif}</span></div>`;
+                                
+                                const tagsToShow = { "Make": allTags.Make, "Model": allTags.Model, "DateTime": allTags.DateTime, "Software": allTags.Software, "GPSLatitude": allTags.GPSLatitude, "GPSLongitude": allTags.GPSLongitude };
+                                const foundTags = Object.entries(tagsToShow).filter(([key, value]) => value);
 
-        // --- LINK SCANNER LOGIC ---
-        const linkInput = document.getElementById('link-input');
-        const scanLinkBtn = document.getElementById('scan-link-btn');
-        const linkResult = document.getElementById('link-result');
-
-        scanLinkBtn.addEventListener('click', () => {
-            const url = linkInput.value.trim();
-            if (!url) {
-                linkResult.innerHTML = `<div class="p-4 rounded-lg bg-yellow-100 text-yellow-800 border border-yellow-200">Please enter a URL to scan.</div>`;
-                return;
-            }
-
-            // Basic validation to ensure it's a plausible URL structure
-            let validUrl = true;
-            try {
-                new URL(url);
-            } catch (_) {
-                validUrl = false;
-            }
-
-            if (!validUrl) {
-                linkResult.innerHTML = `<div class="p-4 rounded-lg bg-red-100 text-red-800 border border-red-200">Invalid URL. Please enter a full URL (e.g., https://example.com).</div>`;
-                return;
-            }
-
-            // --- SIMULATION of a link scan ---
-            // A real implementation would call a backend service with an API key for a service like Google Safe Browsing.
-            linkResult.innerHTML = '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div><span class="ml-2">Scanning...</span></div>';
-            
-            setTimeout(() => {
-                let resultHTML = '';
-                // Simple checks for suspicious patterns
-                if (url.includes('.xyz') || url.includes('.info') || url.includes('.top') || url.match(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/)) {
-                     resultHTML = `<div class="p-4 rounded-lg bg-amber-100 text-amber-800 border border-amber-200">
-                        <h4 class="font-bold">Potentially Unsafe</h4>
-                        <p class="text-sm">This link has characteristics that are sometimes associated with malicious websites. Proceed with caution.</p>
-                    </div>`;
-                } else if (!url.startsWith('https://')) {
-                    resultHTML = `<div class="p-4 rounded-lg bg-yellow-100 text-yellow-800 border border-yellow-200">
-                        <h4 class="font-bold">Caution: Not Secure</h4>
-                        <p class="text-sm">This link does not use a secure (HTTPS) connection. Information sent to this site could be intercepted.</p>
-                    </div>`;
-                } else {
-                    resultHTML = `<div class="p-4 rounded-lg bg-green-100 text-green-800 border border-green-200">
-                        <h4 class="font-bold">Looks Safe</h4>
-                        <p class="text-sm">Our basic scan did not find any immediate signs of danger. Always be cautious when visiting new websites.</p>
-                    </div>`;
-                }
-                linkResult.innerHTML = resultHTML;
-            }, 1000);
-        });
-
-        // --- METADATA SCRUBBER LOGIC ---
-        const imageUpload = document.getElementById('image-upload');
-        const metadataResult = document.getElementById('metadata-result');
-        const fileNameSpan = document.getElementById('file-name');
-
-        imageUpload.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) {
-                fileNameSpan.textContent = '';
-                metadataResult.innerHTML = '';
-                return;
-            }
-            
-            fileNameSpan.textContent = file.name;
-            metadataResult.innerHTML = '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div><span class="ml-2">Processing image...</span></div>';
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-
-                    // By drawing the image to a canvas and converting to a Blob,
-                    // we create a reliable download link that works in more environments.
-                    canvas.toBlob((blob) => {
-                        const objectUrl = URL.createObjectURL(blob);
-                        
-                        metadataResult.innerHTML = `
-                            <h3 class="font-semibold text-lg text-gray-700 mb-2">Metadata Removed!</h3>
-                            <p class="text-sm text-gray-500 mb-4">A cleaned version of your image is ready.</p>
-                            <img src="${objectUrl}" alt="Cleaned Image Preview" class="max-w-full h-auto max-h-64 rounded-lg shadow-md mb-4">
-                            <a href="${objectUrl}" download="cleaned_${file.name}" class="w-full text-center bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">
-                                Download Cleaned Image
-                            </a>
-                        `;
-                    }, file.type);
+                                if (foundTags.length > 0) {
+                                    exifTable = `<table class="w-full text-sm text-left">
+                                                    <thead class="text-xs uppercase" style="color: var(--text-secondary); background-color: var(--bg-primary);">
+                                                        <tr><th scope="col" class="px-4 py-2 rounded-l-lg">Tag</th><th scope="col" class="px-4 py-2 rounded-r-lg">Value</th></tr>
+                                                    </thead><tbody>`;
+                                    foundTags.forEach(([key, value]) => {
+                                        exifTable += `<tr class="border-b" style="border-color: var(--border-color);"><td class="px-4 py-2 font-medium">${key}</td><td class="px-4 py-2 font-mono text-xs">${value}</td></tr>`;
+                                    });
+                                    exifTable += `</tbody></table>`;
+                                }
+                                
+                                metadataResult.innerHTML = `
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                                        <div>
+                                            <h3 class="font-semibold text-lg mb-2" data-lang-key="metadataFound">${translations[currentLanguage].metadataFound}</h3>
+                                            <div class="max-h-60 overflow-y-auto pr-2">${exifTable}</div>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-semibold text-lg mb-2">Image Preview</h3>
+                                            <img src="${URL.createObjectURL(file)}" alt="Original Preview" class="max-w-full h-auto rounded-lg shadow-md mb-4">
+                                            <a href="${cleanedUrl}" download="cleaned_${file.name}" class="w-full text-center block bg-[var(--accent-color)] text-white py-3 rounded-lg font-semibold hover:bg-[var(--accent-hover)] transition-colors" data-lang-key="downloadCleaned">${translations[currentLanguage].downloadCleaned}</a>
+                                        </div>
+                                    </div>`;
+                            });
+                        }, file.type);
+                    };
+                    img.src = e.target.result;
                 };
-                img.onerror = function() {
-                    metadataResult.innerHTML = `<div class="p-4 rounded-lg bg-red-100 text-red-800 border border-red-200">Could not process the selected file. Please try a different image.</div>`;
-                }
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
+                reader.readAsDataURL(file);
+                event.target.value = null;
+            });
 
-            // Reset the input value to allow re-uploading the same file
-            event.target.value = null;
+            // --- PASSWORD CHECKER LOGIC (RESTORED) ---
+            const passwordInput = document.getElementById('password-input');
+            const togglePasswordBtn = document.getElementById('toggle-password');
+            const checkPasswordBtn = document.getElementById('check-password-btn');
+            const passwordResult = document.getElementById('password-result');
+            const eyeOpen = document.getElementById('eye-open');
+            const eyeClosed = document.getElementById('eye-closed');
+
+            togglePasswordBtn.addEventListener('click', () => {
+                const isPassword = passwordInput.type === 'password';
+                passwordInput.type = isPassword ? 'text' : 'password';
+                eyeOpen.classList.toggle('hidden', isPassword);
+                eyeClosed.classList.toggle('hidden', !isPassword);
+            });
+
+            checkPasswordBtn.addEventListener('click', async () => {
+                const password = passwordInput.value;
+                passwordResult.innerHTML = `<div class="flex items-center justify-center text-[var(--text-secondary)]"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--accent-color)]"></div><span class="ml-2">Checking...</span></div>`;
+                if (!password) {
+                    passwordResult.innerHTML = `<div class="p-4 rounded-lg" style="background-color:var(--amber-bg); color:var(--amber-text); border:1px solid var(--amber-border);">Please enter a password.</div>`;
+                    return;
+                }
+                const strength = checkPasswordStrength(password);
+                const pwnedCount = await checkPwned(password);
+                let resultHTML = '<div class="space-y-3">';
+                resultHTML += strength.html;
+                if (pwnedCount === null) {
+                    resultHTML += `<div class="p-3 rounded-md bg-gray-100 text-gray-700">Could not check for breaches.</div>`;
+                } else if (pwnedCount > 0) {
+                    resultHTML += `<div class="p-3 rounded-md flex items-center" style="background-color:var(--red-bg); color:var(--red-text); border:1px solid var(--red-border);"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg><strong>Oh no!</strong> This password was found in <strong>${pwnedCount.toLocaleString()}</strong> data breaches.</div>`;
+                } else {
+                    resultHTML += `<div class="p-3 rounded-md flex items-center" style="background-color:var(--green-bg); color:var(--green-text); border:1px solid var(--green-border);"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg><strong>Good news!</strong> This password was not found in any known breaches.</div>`;
+                }
+                resultHTML += '</div>';
+                passwordResult.innerHTML = resultHTML;
+            });
+
+            function checkPasswordStrength(password) {
+                let score = 0;
+                if (password.length >= 12) score++;
+                if (/[a-z]/.test(password)) score++;
+                if (/[A-Z]/.test(password)) score++;
+                if (/\d/.test(password)) score++;
+                if (/[^A-Za-z0-9]/.test(password)) score++;
+                let message, style;
+                switch (score) {
+                    case 0: case 1: case 2: message = 'Weak'; style = 'background-color:var(--red-bg); color:var(--red-text); border:1px solid var(--red-border);'; break;
+                    case 3: case 4: message = 'Strong'; style = 'background-color:var(--amber-bg); color:var(--amber-text); border:1px solid var(--amber-border);'; break;
+                    case 5: message = 'Very Strong'; style = 'background-color:var(--green-bg); color:var(--green-text); border:1px solid var(--green-border);'; break;
+                }
+                return { html: `<div class="p-3 rounded-md" style="${style}"><strong>Strength:</strong> ${message}</div>` };
+            }
+
+            async function checkPwned(password) {
+                try {
+                    const msgBuffer = new TextEncoder().encode(password);
+                    const hashBuffer = await crypto.subtle.digest('SHA-1', msgBuffer);
+                    const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+                    const prefix = hashHex.substring(0, 5);
+                    const suffix = hashHex.substring(5).toUpperCase();
+                    const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
+                    if (!response.ok) throw new Error();
+                    const data = await response.text();
+                    const match = data.split('\r\n').find(line => line.split(':')[0] === suffix);
+                    return match ? parseInt(match.split(':')[1]) : 0;
+                } catch (error) { return null; }
+            }
+
+            // --- LINK SCANNER LOGIC (RESTORED) ---
+            const linkInput = document.getElementById('link-input');
+            const scanLinkBtn = document.getElementById('scan-link-btn');
+            const linkResult = document.getElementById('link-result');
+            scanLinkBtn.addEventListener('click', () => {
+                const url = linkInput.value.trim();
+                if (!url) {
+                    linkResult.innerHTML = `<div class="p-4 rounded-lg" style="background-color:var(--amber-bg); color:var(--amber-text); border:1px solid var(--amber-border);">Please enter a URL.</div>`;
+                    return;
+                }
+                linkResult.innerHTML = `<div class="flex items-center justify-center text-[var(--text-secondary)]"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--accent-color)]"></div><span class="ml-2">Scanning...</span></div>`;
+                setTimeout(() => {
+                    let resultHTML = '';
+                    if (url.includes('.xyz') || url.includes('.top')) {
+                        resultHTML = `<div class="p-4 rounded-lg" style="background-color:var(--red-bg); color:var(--red-text); border:1px solid var(--red-border);"><h4 class="font-bold">Potentially Unsafe</h4><p class="text-sm">This link has characteristics often associated with malicious websites.</p></div>`;
+                    } else if (!url.startsWith('https://')) {
+                        resultHTML = `<div class="p-4 rounded-lg" style="background-color:var(--amber-bg); color:var(--amber-text); border:1px solid var(--amber-border);"><h4 class="font-bold">Caution: Not Secure</h4><p class="text-sm">This link doesn't use a secure (HTTPS) connection.</p></div>`;
+                    } else {
+                        resultHTML = `<div class="p-4 rounded-lg" style="background-color:var(--green-bg); color:var(--green-text); border:1px solid var(--green-border);"><h4 class="font-bold">Looks Safe</h4><p class="text-sm">Our basic scan found no immediate signs of danger.</p></div>`;
+                    }
+                    linkResult.innerHTML = resultHTML;
+                }, 1000);
+            });
+            
+            // --- SCAM GAME & ALERTS LOGIC (FIXED) ---
+            const gameStartScreen = document.getElementById('game-start-screen');
+            const gameQuestionScreen = document.getElementById('game-question-screen');
+            const gameScoreEl = document.getElementById('game-score');
+            const gameScenarioEl = document.getElementById('game-scenario');
+            const gameOptionsEl = document.getElementById('game-options');
+            const gameFeedbackEl = document.getElementById('game-feedback');
+            const gameNextBtn = document.getElementById('game-next-btn');
+            const refreshAlertBtn = document.getElementById('refresh-alert-btn');
+            const scamAlertTitleEl = document.getElementById('scam-alert-title');
+            const scamAlertDescriptionEl = document.getElementById('scam-alert-description');
+            
+            const scamScenarios = {
+                en: [
+                     { scenario: "SMS: 'Your bank account is locked. Verify at secure-bank-resolve.com.' What do you do?", options: [{ text: "Tap the link.", correct: false }, { text: "Call the official number on your bank card.", correct: true }, { text: "Delete the message.", correct: false }], explanation: "Correct! Never trust links in urgent texts. Always contact your bank through official channels." },
+                     { scenario: "A pop-up: 'WARNING! Your PC is infected! Call Microsoft at 1-800-123-4567!' What's the plan?", options: [{ text: "Call the number.", correct: false }, { text: "Click 'OK'.", correct: false }, { text: "Close the browser tab completely.", correct: true }], explanation: "That's the safe move. This is a classic tech support scam. Microsoft never asks you to call them via pop-ups." },
+                     { scenario: "You receive an email from 'Netflix' saying your account is suspended. The sender's email is 'support@net-flix-billing.com'. What should you do?", options: [{ text: "Click the link and enter card details.", correct: false }, { text: "Log in to Netflix directly from your browser to check.", correct: true }, { text: "Reply with your card number.", correct: false }], explanation: "Excellent! The sender's email is a red flag ('net-flix-billing.com' is not netflix.com). Always go directly to the official website." }
+                ],
+                hi: [
+                    { scenario: "एसएमएस: 'आपका बैंक खाता लॉक हो गया है। secure-bank-resolve.com पर सत्यापित करें।' आप क्या करेंगे?", options: [{ text: "लिंक पर टैप करें।", correct: false }, { text: "अपने बैंक कार्ड पर दिए गए आधिकारिक नंबर पर कॉल करें।", correct: true }, { text: "संदेश हटाएं।", correct: false }], explanation: "सही! अत्यावश्यक संदेशों में लिंक पर कभी भरोसा न करें। हमेशा आधिकारिक चैनलों के माध्यम से अपने बैंक से संपर्क करें।" },
+                    { scenario: "एक पॉप-अप: 'चेतावनी! आपका पीसी संक्रमित है! 1-800-123-4567 पर माइक्रोसॉफ्ट को कॉल करें!' क्या योजना है?", options: [{ text: "नंबर पर कॉल करें।", correct: false }, { text: "'ठीक है' पर क्लिक करें।", correct: false }, { text: "ब्राउज़र टैब को पूरी तरह से बंद करें।", correct: true }], explanation: "यह सुरक्षित कदम है। यह एक क्लासिक टेक सपोर्ट घोटाला है। माइक्रोसॉफ्ट कभी भी पॉप-अप के माध्यम से आपको कॉल करने के लिए नहीं कहता है।" },
+                    { scenario: "आपको 'Netflix' से एक ईमेल मिला है जिसमें कहा गया है कि आपका खाता निलंबित कर दिया गया है। प्रेषक का ईमेल 'support@net-flix-billing.com' है। आपको क्या करना चाहिए?", options: [{ text: "लिंक पर क्लिक करें और कार्ड विवरण दर्ज करें।", correct: false }, { text: "अपने खाते की जांच के लिए सीधे अपने ब्राउज़र से नेटफ्लिक्स में लॉग इन करें।", correct: true }, { text: "अपने क्रेडिट कार्ड नंबर के साथ उत्तर दें।", correct: false }], explanation: "बहुत बढ़िया! प्रेषक का ईमेल पता एक बड़ा खतरा है ('net-flix-billing.com' netflix.com नहीं है)। हमेशा आधिकारिक वेबसाइट पर सीधे जाएं।" }
+                ]
+            };
+            
+            let score, currentScenarioIndex, shuffledScenarios;
+            
+            document.getElementById('start-game-btn').addEventListener('click', startGame);
+            gameNextBtn.addEventListener('click', nextScenario);
+            
+            function startGame() {
+                score = 0;
+                currentScenarioIndex = 0;
+                shuffledScenarios = [...scamScenarios[currentLanguage]].sort(() => Math.random() - 0.5);
+                gameStartScreen.classList.add('hidden');
+                gameQuestionScreen.classList.remove('hidden');
+                gameNextBtn.innerText = translations[currentLanguage].nextQuestionBtn;
+                displayScenario();
+            }
+
+            function displayScenario() {
+                gameScoreEl.innerHTML = `<span data-lang-key="scorePrefix">${translations[currentLanguage].scorePrefix}</span>: ${score}`;
+                gameFeedbackEl.innerHTML = '';
+                gameNextBtn.classList.add('hidden');
+                const currentScenario = shuffledScenarios[currentScenarioIndex];
+                gameScenarioEl.textContent = currentScenario.scenario;
+                gameOptionsEl.innerHTML = currentScenario.options.map(option =>
+                    `<button class="w-full text-left p-3 border rounded-lg option-btn hover:bg-[var(--bg-primary)]" style="border-color:var(--border-color);">${option.text}</button>`
+                ).join('');
+                gameOptionsEl.querySelectorAll('.option-btn').forEach((button, index) => {
+                    button.onclick = () => selectAnswer(shuffledScenarios[currentScenarioIndex].options[index], button, currentScenario.explanation);
+                });
+            }
+
+            function selectAnswer(option, btn, explanation) {
+                Array.from(gameOptionsEl.children).forEach(button => button.disabled = true);
+                btn.classList.add(option.correct ? 'correct' : 'incorrect');
+                if (option.correct) score++;
+                gameFeedbackEl.innerHTML = `<div class="p-3 rounded-md" style="background-color:${option.correct ? 'var(--green-bg)' : 'var(--red-bg)'}; color:${option.correct ? 'var(--green-text)' : 'var(--red-text)'}; border:1px solid ${option.correct ? 'var(--green-border)' : 'var(--red-border)'};"><p class="font-bold">${option.correct ? 'Correct!' : 'Not quite.'}</p><p class="text-sm">${explanation}</p></div>`;
+                gameScoreEl.innerHTML = `<span data-lang-key="scorePrefix">${translations[currentLanguage].scorePrefix}</span>: ${score}`;
+                gameNextBtn.classList.remove('hidden');
+                if (currentScenarioIndex >= shuffledScenarios.length - 1) {
+                    gameNextBtn.innerText = `${translations[currentLanguage].playAgainBtn}`;
+                }
+            }
+
+            function nextScenario() {
+                currentScenarioIndex++;
+                if (currentScenarioIndex < shuffledScenarios.length) {
+                    displayScenario();
+                } else {
+                    showFinalScore();
+                }
+            }
+
+            function showFinalScore() {
+                gameQuestionScreen.classList.add('hidden');
+                gameStartScreen.classList.remove('hidden');
+                const startGameButton = gameStartScreen.querySelector('button');
+                startGameButton.innerText = `${translations[currentLanguage].playAgainBtn} (${translations[currentLanguage].scorePrefix}: ${score}/${shuffledScenarios.length})`;
+            }
+
+            function loadLatestScamAlert() {
+                 const alerts = {
+                    en: [
+                        { title: "QR Code Payment Scam", description: "Scammers place fake QR codes over real ones on things like parking meters or rental bikes." },
+                        { title: "AI Voice Cloning Scam", description: "Scammers use AI to clone a loved one's voice, then call pretending to be in an emergency." },
+                        { title: "Fake Job Offer Scam", description: "You get a message offering a high-paying, remote job that requires you to pay for 'training' or 'supplies'." },
+                        { title: "'Missed Delivery' Smishing", description: "A text message claims a package delivery failed and you must click a link to reschedule, which steals your info."}
+                    ],
+                    hi: [
+                        { title: "क्यूआर कोड भुगतान घोटाला", description: "धोखेबाज पार्किंग मीटर या किराए की बाइक जैसी चीजों पर असली क्यूआर कोड के ऊपर नकली क्यूआर कोड स्टिकर लगा देते हैं।" },
+                        { title: "एआई वॉयस क्लोनिंग घोटाला", description: "धोखेबाज किसी प्रियजन की आवाज का क्लोन बनाने के लिए एआई का उपयोग करते हैं, फिर आपात स्थिति में होने का नाटक करके आपको फोन करते हैं।" },
+                        { title: "नकली नौकरी प्रस्ताव घोटाला", description: "आपको एक संदेश मिलता है जिसमें एक उच्च-भुगतान वाली, दूरस्थ नौकरी की पेशकश की जाती है जिसके लिए आपको 'प्रशिक्षण' या 'आपूर्ति' के लिए भुगतान करना पड़ता है।" },
+                        { title: "'मिस्ड डिलीवरी' स्मिशिंग", description: "एक टेक्स्ट संदेश का दावा है कि पैकेज डिलीवरी विफल हो गई है और आपको पुनर्निर्धारित करने के लिए एक लिंक पर क्लिक करना होगा, जो आपकी जानकारी चुरा लेता है।" }
+                    ]
+                };
+                const randomScam = alerts[currentLanguage][Math.floor(Math.random() * alerts[currentLanguage].length)];
+                scamAlertTitleEl.textContent = randomScam.title;
+                scamAlertDescriptionEl.textContent = randomScam.description;
+            }
+            refreshAlertBtn.addEventListener('click', loadLatestScamAlert);
+            
+            // --- PRECAUTIONS LIST LOGIC ---
+            const precautionsListContainer = document.getElementById('precautions-list');
+             function renderPrecautionsList() {
+                 const precautionsData = {
+                     en: [
+                         { title: "Use a Password Manager", steps: ["Choose a reputable manager (e.g., Bitwarden).", "Create one strong master password.", "Let the manager generate unique passwords.", "Enable 2FA on the manager."] },
+                         { title: "Enable Two-Factor Authentication (2FA)", steps: ["Go to security settings of important accounts.", "Use an authenticator app.", "Scan the QR code to link.", "Save backup codes offline."] },
+                         { title: "Recognize & Avoid Phishing", steps: ["Be suspicious of emails that create urgency.", "Check the sender's email address carefully.", "Hover over links to see the real URL.", "Never provide passwords in response to an email."] },
+                         { title: "Keep Your Software Updated", steps: ["Enable automatic updates for your OS and browser.", "Regularly update other applications.", "Remove any software you no longer use."] },
+                         { title: "Secure Your Home Wi-Fi", steps: ["Change the default admin password of your router.", "Ensure your network uses WPA3 or WPA2 encryption.", "Choose a strong password for your Wi-Fi.", "Enable a guest network for visitors."] }
+                     ],
+                     hi: [
+                         { title: "पासवर्ड मैनेजर का उपयोग करें", steps: ["एक प्रतिष्ठित मैनेजर चुनें (जैसे, बिटवार्डेन)।", "एक मजबूत मास्टर पासवर्ड बनाएं।", "मैनेजर को यूनिक पासवर्ड बनाने दें।", "मैनेजर पर 2FA सक्षम करें।"] },
+                         { title: "टू-फैक्टर ऑथेंटिकेशन (2FA) सक्षम करें", steps: ["महत्वपूर्ण खातों की सुरक्षा सेटिंग्स पर जाएं।", "एक ऑथेंटिकेटर ऐप का उपयोग करें।", "लिंक करने के लिए QR कोड स्कैन करें।", "बैकअप कोड ऑफ़लाइन सहेजें।"] },
+                         { title: "फ़िशिंग को पहचानें और उससे बचें", steps: ["जरूरी काम का अहसास कराने वाले ईमेल से सावधान रहें।", "भेजने वाले का ईमेल पता ध्यान से जांचें।", "असली यूआरएल देखने के लिए लिंक पर होवर करें।", "ईमेल के जवाब में कभी भी पासवर्ड न दें।"] },
+                         { title: "अपने सॉफ्टवेयर को अपडेट रखें", steps: ["अपने ओएस और ब्राउज़र के लिए स्वचालित अपडेट सक्षम करें।", "अन्य एप्लिकेशन को नियमित रूप से अपडेट करें।", "जो सॉफ्टवेयर आप अब उपयोग नहीं करते हैं उसे हटा दें।"] },
+                         { title: "अपने होम वाई-फाई को सुरक्षित करें", steps: ["अपने राउटर का डिफ़ॉल्ट एडमिन पासवर्ड बदलें।", "सुनिश्चित करें कि आपका नेटवर्क WPA3 या WPA2 एन्क्रिप्शन का उपयोग करता है।", "अपने वाई-फाई के लिए एक मजबूत पासवर्ड चुनें।", "मेहमानों के लिए एक गेस्ट नेटवर्क सक्षम करें।"] }
+                     ]
+                 };
+                 const data = precautionsData[currentLanguage];
+                 precautionsListContainer.innerHTML = data.map(item => `
+                     <div class="precaution-item border-b last:border-b-0" style="border-color: var(--border-color);">
+                         <div class="precaution-header flex justify-between items-center p-3 cursor-pointer">
+                             <h3 class="font-medium">${item.title}</h3>
+                             <span class="precaution-icon text-[var(--accent-color)]"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg></span>
+                         </div>
+                         <div class="precaution-steps pl-4 pr-2"><ul class="list-disc list-inside space-y-2 text-sm pb-4" style="color: var(--text-secondary);">${item.steps.map(step => `<li>${step}</li>`).join('')}</ul></div>
+                     </div>`).join('');
+             }
+             precautionsListContainer.addEventListener('click', (e) => {
+                const header = e.target.closest('.precaution-header');
+                if (!header) return;
+                const item = header.parentElement;
+                const currentlyActive = document.querySelector('.precaution-item.active');
+                if (currentlyActive && currentlyActive !== item) {
+                    currentlyActive.classList.remove('active');
+                }
+                item.classList.toggle('active');
+            });
+
+            // --- INITIALIZE UI ---
+            setLanguage(currentLanguage); // Set initial language for all elements
         });
     </script>
 </body>
 </html>
+
 
